@@ -44,11 +44,9 @@ option(USE_STATIC_STD_LIBRARIES "Link with standard libraries statically." OFF)
 #endif()
 
 find_package(Boost COMPONENTS system filesystem REQUIRED)
+find_package(OpenMP QUIET)
 if(VCPKG_TOOLCHAIN)
     find_package(tinyxml2 CONFIG REQUIRED)
-endif()
-if (NOT ${USE_TBB})
-    find_package(OpenMP QUIET)
 endif()
 
 find_package(sgl QUIET)

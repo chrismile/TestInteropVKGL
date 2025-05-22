@@ -1,0 +1,87 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+    "name": "testinteropvkgl",
+    "version": "0.1.0",
+    "dependencies": [
+        "boost-core",
+        "boost-algorithm",
+        "boost-filesystem",
+        "boost-parameter",
+        {
+            "name": "boost-interprocess",
+            "platform": "windows"
+        },
+        "tinyxml2",
+        {
+            "name": "libarchive",
+            "default-features": true,
+            "features": [ "bzip2", "lz4", "lzma", "zstd" ]
+        },
+        "vulkan-headers",
+        "shaderc",
+        "opencl",
+        "glew",
+        "glm",
+        "tbb"
+    ],
+    "default-features": [
+        "sdl3"
+    ],
+    "features": {
+        "sdl2": {
+            "description": "SDL2 backend support.",
+            "dependencies": [
+                {
+                    "name": "sdl2",
+                    "features": [ "vulkan", "x11", "wayland" ],
+                    "platform": "linux"
+                },
+                {
+                    "name": "sdl2",
+                    "features": [ "vulkan" ],
+                    "platform": "!linux"
+                },
+                {
+                    "name": "dbus",
+                    "default-features": false,
+                    "features": [],
+                    "platform": "linux"
+                },
+                "sdl2-image"
+            ]
+        },
+        "sdl3": {
+            "description": "SDL3 backend support.",
+            "dependencies": [
+                {
+                    "name": "sdl3",
+                    "features": [ "vulkan", "x11", "wayland" ],
+                    "platform": "linux"
+                },
+                {
+                    "name": "sdl3",
+                    "features": [ "vulkan" ],
+                    "platform": "!linux"
+                },
+                {
+                    "name": "dbus",
+                    "default-features": false,
+                    "features": [],
+                    "platform": "linux"
+                }
+            ]
+        },
+        "glfw3": {
+            "description": "GLFW3 backend support.",
+            "dependencies": [
+                "glfw3"
+            ]
+        },
+        "tbb": {
+            "description": "Use TBB instead of OpenMP for multi-threading",
+            "dependencies": [
+                "tbb"
+            ]
+        }
+    }
+}

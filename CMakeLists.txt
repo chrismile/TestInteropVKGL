@@ -86,6 +86,7 @@ if(MSYS OR MINGW OR (${CMAKE_GENERATOR} STREQUAL "MinGW Makefiles") OR (${CMAKE_
     target_link_libraries(TestInteropVKGL PUBLIC mingw32)
 endif()
 
+find_package(Boost COMPONENTS system filesystem REQUIRED)
 if ("SUPPORT_SDL2" IN_LIST SGL_INTERFACE_COMPILE_DEFINITIONS)
     if (VCPKG_TOOLCHAIN)
         target_link_libraries(Correrender PUBLIC SDL2::SDL2main)

@@ -85,3 +85,27 @@ if(MSYS OR MINGW OR (${CMAKE_GENERATOR} STREQUAL "MinGW Makefiles") OR (${CMAKE_
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mconsole")
     target_link_libraries(TestInteropVKGL PUBLIC mingw32)
 endif()
+
+if ("SUPPORT_SDL2" IN_LIST SGL_INTERFACE_COMPILE_DEFINITIONS)
+    if (VCPKG_TOOLCHAIN)
+        target_link_libraries(Correrender PUBLIC SDL2::SDL2main)
+    else()
+        target_link_libraries(Correrender PUBLIC SDL2::Main)
+    endif()
+endif()
+if ("SUPPORT_SDL3" IN_LIST SGL_INTERFACE_COMPILE_DEFINITIONS)
+    if(TARGET SDL3::SDL3)
+        target_link_libraries(Correrender PRIVATE SDL3::SDL3)
+    elseif(TARGET SDL3::SDL3-static)
+        target_link_libraries(Correrender PRIVATE SDL3::SDL3-static)
+    else()
+        message(FATAL_ERROR "Unknown SDL3 target.")
+    endif()
+endif()
+
+# sgl provides Vulkan headers in its interface, which are provided if Vulkan was not found during its build.
+find_package(Vulkan QUIET)
+if (${Vulkan_FOUND} AND NOT "USE_SGL_VULKAN_HEADERS" IN_LIST SGL_INTERFACE_COMPILE_DEFINITIONS
+        AND ${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.21.0")
+    target_link_libraries(TestInteropVKGL PUBLIC Vulkan::Headers)
+endif()

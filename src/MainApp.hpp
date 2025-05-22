@@ -31,6 +31,10 @@
 
 #include <Utils/SciVis/SciVisApp.hpp>
 
+namespace sgl {
+    class DeviceSelectorVulkan;
+}
+
 class DiagramBase;
 
 class MainApp : public sgl::SciVisApp {
@@ -44,6 +48,10 @@ public:
 
 private:
     void reloadDataSet() override {}
+
+    // Vulkan device selector.
+    sgl::DeviceSelectorVulkan* deviceSelector = nullptr;
+
     DiagramBase* diagram = nullptr;
 };
 

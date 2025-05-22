@@ -27,8 +27,8 @@
  */
 
 #include <Graphics/Vulkan/Utils/Device.hpp>
+#include <Graphics/Vulkan/Utils/DeviceSelectionVulkan.hpp>
 #include <Graphics/Vulkan/Image/Image.hpp>
-#include <Graphics/Vulkan/Render/Renderer.hpp>
 
 #include "DiagramBase.hpp"
 #include "MainApp.hpp"
@@ -36,6 +36,7 @@
 MainApp::MainApp() {
     useDockSpaceMode = false;
     useLinearRGB = false;
+    deviceSelector = device->getDeviceSelector();
     diagram = new DiagramBase;
     diagram->setRendererVk(rendererVk);
     diagram->initialize();
@@ -60,7 +61,12 @@ void MainApp::render() {
 void MainApp::renderGui() {
     if (ImGui::Begin("Info")) {
         renderGuiFpsCounter();
+        deviceSelector->renderGui();
         ImGui::End();
+    }
+    deviceSelector->renderGuiDialog();
+    if (deviceSelector->getShallRestartApp()) {
+        quit();
     }
 }
 

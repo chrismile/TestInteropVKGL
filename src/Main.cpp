@@ -33,12 +33,10 @@
 #include <Graphics/Vulkan/Utils/Device.hpp>
 #include <Graphics/Vulkan/Utils/Swapchain.hpp>
 
-#ifdef SUPPORT_OPENGL
 #include <Graphics/OpenGL/Context/OffscreenContext.hpp>
 #ifdef _WIN32
 #include <Graphics/OpenGL/Context/DeviceSelectionWGL.hpp>
 #include <Graphics/OpenGL/Context/DeviceSelectionWGLGlobals.hpp>
-#endif
 #endif
 
 #include "MainApp.hpp"
@@ -52,6 +50,8 @@ int main(int argc, char *argv[]) {
 #endif
     sgl::AppSettings::get()->initializeDataDirectory();
 
+    std::string settingsFile = sgl::FileUtils::get()->getConfigDirectory() + "settings.txt";
+    sgl::AppSettings::get()->loadSettings(settingsFile.c_str());
     sgl::AppSettings::get()->getSettings().addKeyValue("window-multisamples", 0);
     sgl::AppSettings::get()->getSettings().addKeyValue("window-debugContext", true);
     sgl::AppSettings::get()->getSettings().addKeyValue("window-vSync", true);
@@ -84,6 +84,7 @@ int main(int argc, char *argv[]) {
     sgl::vk::Instance* instance = sgl::AppSettings::get()->getVulkanInstance();
     auto* device = new sgl::vk::Device;
     sgl::vk::DeviceFeatures requestedDeviceFeatures{};
+    device->setUseAppDeviceSelector();
     device->createDeviceSwapchain(
             instance, window, {
                     VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME

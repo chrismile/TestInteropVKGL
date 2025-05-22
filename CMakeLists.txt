@@ -1,0 +1,87 @@
+cmake_minimum_required(VERSION 3.10...4.0)
+
+project(TestInteropVKGL)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
+
+set(CMAKE_CXX_STANDARD 17)
+
+file(GLOB_RECURSE SOURCES src/*.cpp src/*.c src/*.hpp src/*.h)
+include_directories(src)
+
+if(MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:__cplusplus")
+    # Avoid warning 'IMPORTED_IMPLIB not set for imported target "sgl" configuration "MinSizeRel/RelWithDebInfo".'
+    set(CMAKE_CONFIGURATION_TYPES Debug Release)
+endif()
+
+if(MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W3 /EHsc /Zc:__cplusplus")
+elseif(CMAKE_COMPILER_IS_GNUCXX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+endif()
+
+# Prefer GLVND by default when available.
+if (${CMAKE_VERSION} VERSION_GREATER "3.11")
+    cmake_policy(SET CMP0072 NEW)
+endif()
+
+if(VCPKG_TOOLCHAIN)
+    if(EXISTS "${Z_VCPKG_ROOT_DIR}/triplets/${VCPKG_TARGET_TRIPLET}.cmake")
+        include("${Z_VCPKG_ROOT_DIR}/triplets/${VCPKG_TARGET_TRIPLET}.cmake")
+    elseif(EXISTS "${Z_VCPKG_ROOT_DIR}/triplets/community/${VCPKG_TARGET_TRIPLET}.cmake")
+        include("${Z_VCPKG_ROOT_DIR}/triplets/community/${VCPKG_TARGET_TRIPLET}.cmake")
+    else()
+        message(FATAL_ERROR "Could not find a vcpkg triplet file for ${VCPKG_TARGET_TRIPLET}.")
+    endif()
+endif()
+
+option(USE_STATIC_STD_LIBRARIES "Link with standard libraries statically." OFF)
+
+#if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/sgl/src")
+#    message(FATAL_ERROR "Error: Submodules are not cloned. Please call \"git submodule update --init --recursive\".")
+#endif()
+
+find_package(sgl QUIET)
+if(NOT sgl_FOUND)
+    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH};third_party/sgl/install/lib/cmake/sgl)
+    find_package(sgl REQUIRED)
+endif()
+
+add_executable(TestInteropVKGL ${SOURCES} ${CUDA_SOURCES})
+
+#set(USE_BOOST OFF)
+#set(USE_LIBARCHIVE OFF)
+#set(USE_TINYXML2 OFF)
+#set(SUPPORT_OPENGL ON)
+#set(SUPPORT_CUDA OFF)
+#set(SUPPORT_OPENCL OFF)
+#add_subdirectory(third_party/sgl)
+target_link_libraries(TestInteropVKGL PUBLIC sgl)
+
+if (${USE_STATIC_STD_LIBRARIES})
+    if((MSYS OR MINGW OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")) AND ${USE_STATIC_STD_LIBRARIES})
+        target_link_options(TestInteropVKGL PRIVATE -static-libgcc -static-libstdc++)
+    endif()
+    if(UNIX AND NOT APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_link_options(TestInteropVKGL PRIVATE "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/CMake/symbols_linux_gcc.map")
+    endif()
+    if (MSVC)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    endif()
+endif()
+
+if(MSVC)
+    set_target_properties(TestInteropVKGL PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:CONSOLE")
+    set_target_properties(TestInteropVKGL PROPERTIES COMPILE_DEFINITIONS_DEBUG "_CONSOLE")
+    set_target_properties(TestInteropVKGL PROPERTIES LINK_FLAGS_RELWITHDEBINFO "/SUBSYSTEM:CONSOLE")
+    set_target_properties(TestInteropVKGL PROPERTIES COMPILE_DEFINITIONS_RELWITHDEBINFO "_CONSOLE")
+    set_target_properties(TestInteropVKGL PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:CONSOLE")
+    set_target_properties(TestInteropVKGL PROPERTIES LINK_FLAGS_MINSIZEREL "/SUBSYSTEM:CONSOLE")
+endif()
+
+if(MSYS OR MINGW OR (${CMAKE_GENERATOR} STREQUAL "MinGW Makefiles") OR (${CMAKE_GENERATOR} STREQUAL "MSYS Makefiles"))
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mconsole")
+    target_link_libraries(TestInteropVKGL PUBLIC mingw32)
+endif()

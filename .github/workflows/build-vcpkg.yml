@@ -26,32 +26,54 @@ jobs:
 
     env:
       VCPKG_ROOT: ${{ github.workspace }}/third_party/vcpkg
-      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/third_party/vcpkg/bincache
+      VCPKG_CACHE_DIR: ${{ github.workspace }}/third_party/vcpkg/bincache
+      VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/third_party/vcpkg/bincache,readwrite
+      VCPKG_COMMIT_ID: "a9eee3b18df395dbb8be71a31bd78ea441056e42"
 
     steps:
-      - name: Set up vcpkg environment variables
-        shell: bash
-        run: |
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            echo "VCPKG_COPY_TRIPLET=x64-linux" >> $GITHUB_ENV
-            echo "VCPKG_DEFAULT_TRIPLET=x64-linux-${{matrix.linking}}-release-only" >> $GITHUB_ENV
-          elif [ "$RUNNER_OS" == "Windows" ]; then
-            echo "VCPKG_COPY_TRIPLET=x64-windows" >> $GITHUB_ENV
-            echo "VCPKG_DEFAULT_TRIPLET=x64-windows-${{matrix.linking}}-release-only" >> $GITHUB_ENV
-          elif [ "$RUNNER_OS" == "macOS" ] && [ "$(uname -m)" = "x86_64" ]; then
-            echo "VCPKG_COPY_TRIPLET=x64-osx" >> $GITHUB_ENV
-            echo "VCPKG_DEFAULT_TRIPLET=x64-osx-${{matrix.linking}}-release-only" >> $GITHUB_ENV
-          elif [ "$RUNNER_OS" == "macOS" ]; then
-            echo "VCPKG_COPY_TRIPLET=arm64-osx" >> $GITHUB_ENV
-            echo "VCPKG_DEFAULT_TRIPLET=arm64-osx-${{matrix.linking}}-release-only" >> $GITHUB_ENV
-          else
-            echo "$RUNNER_OS is not supported."
-          exit 1
-          fi
-
       - uses: actions/checkout@v2
         with:
           submodules: true
+
+      - name: Set up vcpkg
+        shell: bash
+        run: |
+          mkdir -p "${{env.VCPKG_ROOT}}"
+          git clone https://github.com/microsoft/vcpkg.git "${{env.VCPKG_ROOT}}"
+          pushd "${{env.VCPKG_ROOT}}"
+          if [ -z "${{env.VCPKG_COMMIT_ID}}" ]; then
+            export VCPKG_COMMIT_ID="$(git rev-parse HEAD)"
+            echo "VCPKG_COMMIT_ID=${VCPKG_COMMIT_ID}" >> $GITHUB_ENV
+          else
+            export VCPKG_COMMIT_ID="${{env.VCPKG_COMMIT_ID}}"
+            git checkout ${{env.VCPKG_COMMIT_ID}}
+          fi
+          popd
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            export VCPKG_COPY_TRIPLET="x64-linux"
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            export VCPKG_COPY_TRIPLET="x64-windows"
+          elif [ "$RUNNER_OS" == "macOS" ] && [ "$(uname -m)" = "x86_64" ]; then
+            export VCPKG_COPY_TRIPLET="x64-osx"
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            export VCPKG_COPY_TRIPLET="arm64-osx"
+          else
+            echo "$RUNNER_OS is not supported."
+            exit 1
+          fi
+          echo "VCPKG_COPY_TRIPLET=${VCPKG_COPY_TRIPLET}" >> $GITHUB_ENV
+          export VCPKG_DEFAULT_TRIPLET="${VCPKG_COPY_TRIPLET}-${{matrix.linking}}-release-only"
+          echo "VCPKG_DEFAULT_TRIPLET=${VCPKG_DEFAULT_TRIPLET}" >> $GITHUB_ENV
+          export VCPKG_CACHE_KEY_PART="${{ matrix.os }}-${VCPKG_DEFAULT_TRIPLET}-${VCPKG_COMMIT_ID}-${{ github.event.repository.name }}"
+          echo "VCPKG_CACHE_KEY=vcpkg-${VCPKG_CACHE_KEY_PART}-" >> $GITHUB_ENV
+          echo "VCPKG_CACHE_KEY_FULL=vcpkg-${VCPKG_CACHE_KEY_PART}-${{ hashFiles('vcpkg.json') }}" >> $GITHUB_ENV
+
+      - name: Restore vcpkg cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{env.VCPKG_CACHE_DIR}}
+          key: ${{env.VCPKG_CACHE_KEY_FULL}}
+          restore-keys: ${{env.VCPKG_CACHE_KEY}}
 
       - uses: lukka/get-cmake@latest
         with:
@@ -162,3 +184,9 @@ jobs:
           )
           :vulkan_finished
           ./build-msvc.bat --do-not-run --vcpkg-triplet ${{env.VCPKG_DEFAULT_TRIPLET}}
+
+      - name: Save vcpkg cache
+        uses: actions/cache/save@v4
+        with:
+          path: ${{env.VCPKG_CACHE_DIR}}
+          key: ${{env.VCPKG_CACHE_KEY_FULL}}

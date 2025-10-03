@@ -1,6 +1,6 @@
 :: BSD 2-Clause License
 ::
-:: Copyright (c) 2021-2022, Christoph Neuhauser, Felix Brendel
+:: Copyright (c) 2021-2025, Christoph Neuhauser
 :: All rights reserved.
 ::
 :: Redistribution and use in source and binary forms, with or without
@@ -171,6 +171,7 @@ if not exist .\sgl (
     git clone --depth 1 https://github.com/chrismile/sgl.git   || exit /b 1
 )
 
+set cmake_args_sgl=%cmake_args_sgl% -DDISABLE_MESA_INTEROP_WORKAROUND=ON
 if not exist .\sgl\install (
     echo ------------------------
     echo      building sgl

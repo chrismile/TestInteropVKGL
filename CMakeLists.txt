@@ -43,7 +43,7 @@ option(USE_STATIC_STD_LIBRARIES "Link with standard libraries statically." OFF)
 #    message(FATAL_ERROR "Error: Submodules are not cloned. Please call \"git submodule update --init --recursive\".")
 #endif()
 
-find_package(Boost COMPONENTS system filesystem REQUIRED)
+find_package(Boost 1.69.0 COMPONENTS filesystem REQUIRED)
 find_package(OpenMP QUIET)
 if(VCPKG_TOOLCHAIN)
     find_package(tinyxml2 CONFIG REQUIRED)
